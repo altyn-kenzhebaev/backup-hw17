@@ -20,12 +20,16 @@
     - borgbackup-package
     - packages
 
-- name: BACKUP | Create a new xfs primary partition
+- name: BACKUP | Create a new primary partition
   community.general.parted:
-    device: /dev/sda
+    device: /dev/sdb
     number: 1
     state: present
-    fs_type: xfs
+
+- name: BACKUP | Create a xfs filesystem on /dev/sdb1
+  community.general.filesystem:
+    fstype: xfs
+    dev: /dev/sdb1
   
 - name: BACKUP | Add the user 'borg' for backup administration
   ansible.builtin.user:
@@ -34,7 +38,8 @@
 
 - name: BACKUP | Create .ssh folder
   ansible.builtin.file:
-    path: /home/borg/.ssh
+    path: /home/borg/.ssh/
+    state: directory
     owner: borg
     group: borg
     mode: '0700'
@@ -50,6 +55,7 @@
 - name: BACKUP | Create mountpoint folder
   ansible.builtin.file:
     path: /var/backup/
+    state: directory
     owner: borg
     group: borg
     mode: '0750'
@@ -57,6 +63,9 @@
 - name: BACKUP | Mount a volume
   ansible.posix.mount:
     path: /var/backup
-    src: /dev/sda1
+    src: /dev/sdb1
     state: mounted
     fstype: xfs
+
+- name: BACKUP | Change owner to directory
+  ansible.builtin.command: chown borg:borg /var/backup/

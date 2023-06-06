@@ -48,6 +48,7 @@ Vagrant.configure("2") do |config|
           end
           box.vm.provision "ansible" do |ansible|
             ansible.playbook = boxconfig[:playbook]
+            ansible.compatibility_mode = "2.0"
           end
       end
   end

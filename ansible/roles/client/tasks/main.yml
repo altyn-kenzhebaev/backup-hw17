@@ -25,17 +25,10 @@
 - name: CLIENT | Create .ssh folder
   ansible.builtin.file:
     path: /root/.ssh
+    state: directory
     owner: root
     group: root
     mode: '0700'
-
-- name: CLIENT | Configure key-pair for ssh connection KNOW-HOSTS
-  copy:
-    dest: /root/.ssh/known-hosts
-    src: known-hosts
-    owner: root
-    group: root
-    mode: 0600
 
 - name: CLIENT | Configure key-pair for ssh connection ID-RSA
   copy:
@@ -53,6 +46,19 @@
     group: root
     mode: 0600
 
+- name: CLIENT | Scan for SSH host ed25519 keys
+  command:  ssh-keyscan -H 192.168.50.10 
+  register: keyscan_output
+  tags:
+    - fingerprint_add
+
+- name: CLIENT | Create KNOWN_HOST
+  copy:
+    content: "{{keyscan_output.stdout}}"
+    dest: /root/.ssh/known_hosts
+  tags:
+    - fingerprint_add
+
 - name: CLIENT | Run expect to create backup repository
   ansible.builtin.shell: |
     set timeout 300
@@ -69,7 +75,7 @@
     
     expect "lace\\\(s\\\)."
 
-    exit 0 |
+    exit 0
   args:
     executable: /usr/bin/expect
   tags:
@@ -98,6 +104,14 @@
     state: started
     daemon_reload: true
 
+- name: BACKUP | Create .ssh folder
+  ansible.builtin.file:
+    path: /etc/borg/
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+
 - name: CLIENT | Configure BORG logging
   copy:
     dest: /etc/borg/logging.conf
@@ -109,6 +123,7 @@
 - name: CLIENT | Create log folder
   ansible.builtin.file:
     path: /var/log/borg
+    state: directory
     owner: root
     group: root
     mode: '0644'
