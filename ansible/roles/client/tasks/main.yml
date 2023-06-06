@@ -1,0 +1,124 @@
+- name: CLIENT | set timezone to Asia/Bishkek
+  timezone:
+    name: Asia/Bishkek
+  tags:
+    - timezone-configuration
+
+- name: CLIENT | Install EPEL Repo package from standart repo
+  yum:
+    name: epel-release
+    state: present
+  tags:
+    - epel-package
+    - packages
+
+- name: CLIENT | Install BORGBACKUP package from EPEL Repo
+  yum:
+    name: 
+      - borgbackup
+      - expect
+    state: latest
+  tags:
+    - borgbackup-package
+    - packages
+  
+- name: CLIENT | Create .ssh folder
+  ansible.builtin.file:
+    path: /root/.ssh
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: CLIENT | Configure key-pair for ssh connection KNOW-HOSTS
+  copy:
+    dest: /root/.ssh/known-hosts
+    src: known-hosts
+    owner: root
+    group: root
+    mode: 0600
+
+- name: CLIENT | Configure key-pair for ssh connection ID-RSA
+  copy:
+    dest: /root/.ssh/id_rsa
+    src: id_rsa
+    owner: root
+    group: root
+    mode: 0600
+
+- name: CLIENT | Configure key-pair for ssh connection ID-RSA PUB
+  copy:
+    dest: /root/.ssh/id_rsa.pub
+    src: authorized_keys
+    owner: root
+    group: root
+    mode: 0600
+
+- name: CLIENT | Run expect to create backup repository
+  ansible.builtin.shell: |
+    set timeout 300
+    spawn borg init --encryption=repokey borg@192.168.50.10:/var/backup/
+
+    expect "Enter new passphrase: "
+    send "vagrant\n"
+
+    expect "Enter same passphrase again: "
+    send "vagrant\n"
+
+    expect "Do you want your passphrase to be displayed for verification? \\\[yN\\\]: "
+    send -- "y\r"
+    
+    expect "lace\\\(s\\\)."
+
+    exit 0 |
+  args:
+    executable: /usr/bin/expect
+  tags:
+    - borg_create_repo
+
+- name: CLIENT | Configure BORG as service
+  copy:
+    dest: /etc/systemd/system/borg-backup.service
+    src: borg-backup.service
+    owner: root
+    group: root
+    mode: 0644
+  
+- name: CLIENT | Configure BORG as run by timer every 5min
+  copy:
+    dest: /etc/systemd/system/borg-backup.timer
+    src: borg-backup.timer
+    owner: root
+    group: root
+    mode: 0644
+
+- name: CLIENT | Enable timer and start borg-backup timer
+  ansible.builtin.systemd:
+    name: borg-backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: CLIENT | Configure BORG logging
+  copy:
+    dest: /etc/borg/logging.conf
+    src: logging.conf
+    owner: root
+    group: root
+    mode: 0644
+  
+- name: CLIENT | Create log folder
+  ansible.builtin.file:
+    path: /var/log/borg
+    owner: root
+    group: root
+    mode: '0644'
+  
+- name: CLIENT | Configure BORG logratating
+  copy:
+    dest: /etc/logrotate.d/borg
+    src: borg
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart logrotate

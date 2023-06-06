@@ -1,0 +1,62 @@
+- name: BACKUP | set timezone to Asia/Bishkek
+  timezone:
+    name: Asia/Bishkek
+  tags:
+    - timezone-configuration
+
+- name: BACKUP | Install EPEL Repo package from standart repo
+  yum:
+    name: epel-release
+    state: present
+  tags:
+    - epel-package
+    - packages
+
+- name: BACKUP | Install BORGBACKUP package from EPEL Repo
+  yum:
+    name: borgbackup
+    state: latest
+  tags:
+    - borgbackup-package
+    - packages
+
+- name: BACKUP | Create a new xfs primary partition
+  community.general.parted:
+    device: /dev/sda
+    number: 1
+    state: present
+    fs_type: xfs
+  
+- name: BACKUP | Add the user 'borg' for backup administration
+  ansible.builtin.user:
+    name: borg
+    comment: Backup Administrator
+
+- name: BACKUP | Create .ssh folder
+  ansible.builtin.file:
+    path: /home/borg/.ssh
+    owner: borg
+    group: borg
+    mode: '0700'
+
+- name: BACKUP | Configure key-pair for ssh connection
+  copy:
+    dest: /home/borg/.ssh/authorized_keys
+    src: authorized_keys
+    owner: borg
+    group: borg
+    mode: 0600
+
+- name: BACKUP | Create mountpoint folder
+  ansible.builtin.file:
+    path: /var/backup/
+    owner: borg
+    group: borg
+    mode: '0750'
+
+- name: BACKUP | Mount a volume
+  ansible.posix.mount:
+    path: /var/backup
+    src: /dev/sda1
+    state: mounted
+    fstype: xfs

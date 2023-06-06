@@ -1,0 +1,8 @@
+---
+- name: CLIENT | Configure BORG to backup /etc
+  hosts: client
+  gather_facts: no
+  become: true
+  roles:
+    - client
+...
