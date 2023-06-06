@@ -42,7 +42,7 @@
     state: directory
     owner: borg
     group: borg
-    mode: '0700'
+    mode: 0700
 
 - name: BACKUP | Configure key-pair for ssh connection
   copy:
@@ -58,7 +58,7 @@
     state: directory
     owner: borg
     group: borg
-    mode: '0750'
+    mode: 0750
 
 - name: BACKUP | Mount a volume
   ansible.posix.mount:
