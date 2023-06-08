@@ -152,7 +152,6 @@ $ systemctl status borg-backup.timer
 Если все в порядке, проводим процесс восстановления, останавливаем таймер, удаляем к примеру папку с /etc/logrotate.d, и восстанавливаем с помощью borg:
 ```
 [root@client /]# rm -rf /etc/logrotate.d/
-[root@client /]# rm -rf /etc/logrotate.d/
 [root@client /]# borg extract borg@192.168.50.10:/var/backup/::etc-2023-06-08_08:51:19 etc/logrotate.d/
 Enter passphrase for key ssh://borg@192.168.50.10/var/backup: 
 [root@client /]#
