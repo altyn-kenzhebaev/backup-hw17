@@ -137,3 +137,8 @@
     mode: 0644
   notify:
     - restart logrotate
+
+- name: CLIENT | Start first borg-backup
+  ansible.builtin.systemd:
+    name: borg-backup.service
+    state: started
